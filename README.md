@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestone 0 (setup) is done. The extension builds and all tests pass locally and in CI on Windows and Ubuntu.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestone 0 (setup) is done, and milestone 1 (the NumPy reference simulator) passes its tests locally; its CI run is pending a push.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -31,7 +31,7 @@ Cargo.toml                 Cargo workspace
 pyproject.toml             maturin build configuration
 crates/quadsim/            the Rust simulator
 python/quadsim/            thin Python package that re-exports the compiled module
-python/quadrace/           learning code (PPO, training, evaluation)
+python/quadrace/           ref_sim.py (NumPy reference simulator) and, later, the learning code (PPO, training, evaluation)
 configs/                   every physical constant and hyperparameter, as YAML
 tests/                     Python tests
 docs/                      status, milestone pages, tuning log

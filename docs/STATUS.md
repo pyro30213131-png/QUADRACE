@@ -4,36 +4,35 @@ Last updated: 2026-11-15.
 
 ## Current milestone
 
-**Milestone 0 (setup): done. Both halves of the exit test are met.** Milestone 1 has not been started, per the session protocol; it waits for the owner's go.
+**Milestone 1 (NumPy reference simulator): the exit test is met locally; CI has not run on it.** Milestone 0 is done (CI green on both systems, runs #1 and #2). Milestone 2 has not been started, per the session protocol; it waits for the owner's go.
 
-Exit test: `import quadsim` works locally and CI is green.
+Milestone 1 exit test: all non-parity tests in handoff section 7 pass.
 
 | Exit-test part | State |
 | --- | --- |
-| `import quadsim` works locally | **Met.** Measured 2026-11-14, see "Last test results". |
-| CI green on Windows and Ubuntu | **Met.** CI run #1 (2026-11-14, https://github.com/pyro30213131-png/QUADRACE/actions) passed every step on both `windows-latest` and `ubuntu-latest`: format check, clippy, Rust tests, extension build, Python tests. That run was on the commit pushed before the commit messages were rewritten; the files in it are identical to the current local files except `CLAUDE.md` and `docs/STATUS.md` (checked with `git diff`). |
+| Non-parity tests in section 7 pass | **Met.** 31 test cases in `tests/test_ref_sim.py` pass (16 map to the section 7 bullets); full suite 43 passed. Measured 2026-11-15, see `docs/milestone-1.md`. |
+| CI green (handoff rule 9) | **Not verified.** The milestone 1 commits are local; CI runs when they are pushed. |
 
 ## Owner actions (what only you can do)
 
-1. **Nothing is waiting on you for milestone 0.** The rewritten history was force-pushed on 2026-11-14 (by you, after the safety check blocked me). Checked afterwards: GitHub `main` equals local `main`, no commit message on it carries a `Co-Authored-By` line, and GitHub's contributors list shows only your account.
+1. **Push the milestone 1 commits when you are ready** (`git push`, a normal push; I only push when asked), then check the Actions page: https://github.com/pyro30213131-png/QUADRACE/actions. If either job fails, send me the failing step's log. When both are green, milestone 1 is done and I wait for your go on milestone 2.
 2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up: changing the commits already pushed means another history rewrite and force-push.
 
 ## Last test results
 
-Measured on 2026-11-14 on this machine (Rust 1.100.0, Python 3.12.10, release build for the extension):
+Measured on 2026-11-15 on this machine (Rust 1.100.0, Python 3.12.10, NumPy 2.5.4):
 
 | Check | Result |
 | --- | --- |
-| `cargo test -p quadsim` | 2 passed, 0 failed |
+| `pytest tests/test_ref_sim.py -q` | 31 passed |
+| `pytest -q` | 43 passed in 1.82 s (12 milestone 0 tests plus 31 milestone 1 tests) |
+| `cargo test -p quadsim` | 2 passed, 0 failed (Rust code unchanged since milestone 0) |
 | `cargo fmt --check` | passes (exit code 0) |
 | `cargo clippy --all-targets -- -D warnings` | passes (exit code 0) |
-| `maturin develop --release` | builds and installs (exit code 0) |
-| `pytest -q` | 12 passed in 1.28 s |
-| `import quadsim, quadrace` from another folder | works; `add_arrays([1, 2], [10, 20])` returned `[11, 22]` |
-| `maturin build` wheel | contains `quadsim` (with the compiled `.pyd`) and `quadrace` |
-| CI run #1 on GitHub (2026-11-14) | `windows-latest`: all steps passed. `ubuntu-latest`: all steps passed |
+| Mutation check on `ref_sim.py` | 15 deliberate bugs, all caught by the tests (one needed a new test, added) |
+| CI runs #1 and #2 on GitHub (milestone 0 code) | both `windows-latest` and `ubuntu-latest` passed every step, on both runs |
 
-Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`), as expected with no extension. No test was weakened, skipped or changed between the two runs.
+The individual physics numbers (free-fall error 1.3e-14 m, roll rate 5.23 rad/s at 0.2 s, angular-momentum drift 7e-11, and so on) are in `docs/milestone-1.md`. No test was weakened, skipped or deleted.
 
 ## Toolchain log (2026-11-14)
 
@@ -52,6 +51,7 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 - `tests/test_setup.py` (12 tests), CI workflow `.github/workflows/ci.yml`, `.gitattributes`, `.gitignore`, `README.md`, `docs/milestone-0.md`.
 - Python environment: `.venv` (Python 3.12.10) with maturin 1.16.0, numpy 2.5.4, pytest 9.2.0, PyYAML 6.0.3.
 - Versions checked against current sources: crates.io, the PyO3 getting-started guide, PyPI, GitHub releases. Full table in `README.md`.
+- **Milestone 1:** `python/quadrace/ref_sim.py` (one quadrotor in NumPy float64: rigid body with RK4, rate controller, mixing and allocation, motor lag, action mapping, optional linear drag), `tests/test_ref_sim.py` (31 test cases) and `docs/milestone-1.md`. Three commits, none pushed yet.
 
 ## Things that were unverified and now are
 
@@ -64,19 +64,23 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 
 ## Still unverified
 
-1. CI run #2, on the rewritten history, was still running when this was written: `ubuntu-latest` had passed and `windows-latest` had not finished. Run #1 passed both on identical code, so a failure is not expected, but check the Actions page.
+1. **CI on the milestone 1 commits.** They are local only. The new tests use only NumPy and PyYAML and no platform-specific code, so a failure is not expected, but it has not been run on Linux.
+2. **The reference simulator has never been compared with the Rust code,** because the Rust simulator does not exist yet. Until the milestone 2 parity test passes, the section 7 tests are the only evidence the physics is right.
+3. **Drone parameters are still the handoff's approximate values**, not from a verified source (handoff section 13). Fine for now; the Swift values are needed for milestone 6.
 
 ## Decisions and deviations
 
 - **Config extras.** `configs/drone.yaml` also holds gravity (9.81) and the 500 Hz / 50 Hz timing, so no physical constant lives in code (handoff rule 8). These values are already fixed by sections 6 and 7; only their location is my choice. `drag.enabled: false` is how I encoded "drag off until the robustness milestone".
 - **PyTorch is not installed.** It is a download well over 100 MB, which CLAUDE.md says to ask about, and it is not needed until milestone 3.
 - **Not installed:** TensorBoard, Rerun, matplotlib, ffmpeg (all later milestones).
-- **`docs/milestone-0.md`** is final except for the CI result, and says so at the top.
+- **`docs/milestone-0.md`** is final: milestone 0 is done.
+- **Milestone 1 choices that the Rust port must copy** (details and reasons in `docs/milestone-1.md`): the rotation matrix is built from a normalized quaternion even inside RK4's intermediate stages; RK4 uses the thrust after this substep's motor lag; actions outside [-1, 1] are clipped (the handoff is silent, so this is my choice and is easy to change); the thrust clamp reads `thrust_min` from the config.
+- **Finding for later:** at hover collective thrust, a full-scale yaw command (4 rad/s) asks two motors for below zero thrust, so yaw saturates in normal flight. Roll and pitch at full scale do not. No change made.
 
 ## Next
 
-When you say go, milestone 1 is the NumPy reference simulator (`ref_sim.py`: dynamics, rate controller, mixing, motor lag, and the non-parity tests from handoff section 7). I have not started it.
+When you say go, milestone 2 is the Rust simulator: port one environment from `ref_sim.py`, parity tests (Rust and NumPy agree to 1e-9 after 1 s on 100 random states and action sequences), the PyO3 API, then rayon batching, a determinism test (1 and 8 threads) and a criterion benchmark. I have not started it. Read handoff sections 5 and 7 and `docs/milestone-1.md` first.
 
 ## Open questions
 
-- None for milestone 0.
+- Should the clipping of actions outside [-1, 1] stay as it is? (Handoff is silent; I chose clipping.)
