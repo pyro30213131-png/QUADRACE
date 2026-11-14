@@ -1,0 +1,22 @@
+[package]
+name = "quadsim"
+version = "0.1.0"
+edition = "2024"
+# Minimum Rust version that the current pyo3 and numpy crates (0.30) support.
+rust-version = "1.85"
+description = "Batched quadrotor simulator, exposed to Python through PyO3"
+publish = false
+
+[lib]
+# The compiled file is called _quadsim (.pyd on Windows, .so on Linux).
+# "cdylib" means "shared library that Python can import".
+# The leading underscore is deliberate: the public Python name is `quadsim`,
+# a thin package in python/quadsim/ that re-exports this module.
+name = "_quadsim"
+crate-type = ["cdylib"]
+
+[dependencies]
+# pyo3 and numpy (the rust-numpy crate) must share the same 0.x number.
+# numpy 0.30.0 declares `pyo3 = "^0.30.0"`.
+pyo3 = "0.30"
+numpy = "0.30"

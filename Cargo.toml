@@ -1,0 +1,5 @@
+# Cargo workspace: one Rust crate for now (crates/quadsim). A workspace lets
+# `cargo test` and `cargo clippy` run from the repo root.
+[workspace]
+resolver = "3"
+members = ["crates/quadsim"]
