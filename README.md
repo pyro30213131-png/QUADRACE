@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestone 0 (setup). The extension builds and all tests pass locally; CI has not run yet.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestone 0 (setup) is done. The extension builds and all tests pass locally and in CI on Windows and Ubuntu.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -68,4 +68,4 @@ maturin requires the Python directory to exist when `python-source` is set and `
 | Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2 | resolved in `Cargo.lock`; built and tested together on 2026-11-14 |
 | Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.85 is the stated minimum for PyO3 and rust-numpy |
 | C++ build tools | Visual Studio Build Tools 2022 17.14, MSVC 14.44.35207, Windows SDK 10.0.26100.0 | installed with winget |
-| GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; **the workflow has not run yet** |
+| GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; run on GitHub on 2026-11-14 and passed |

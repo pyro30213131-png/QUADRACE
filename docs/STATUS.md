@@ -1,21 +1,21 @@
 # STATUS
 
-Last updated: 2026-11-14.
+Last updated: 2026-11-15.
 
 ## Current milestone
 
-**Milestone 0 (setup): the local half of the exit test passes; the CI half is not verified.** Milestone 1 has not been started, per the session protocol.
+**Milestone 0 (setup): done. Both halves of the exit test are met.** Milestone 1 has not been started, per the session protocol; it waits for the owner's go.
 
 Exit test: `import quadsim` works locally and CI is green.
 
 | Exit-test part | State |
 | --- | --- |
 | `import quadsim` works locally | **Met.** Measured 2026-11-14, see "Last test results". |
-| CI green on Windows and Ubuntu | **Not verified yet.** `main` was pushed to https://github.com/pyro30213131-png/QUADRACE on 2026-11-14. Commit messages were then rewritten (file contents unchanged) and force-pushed, so the run to look at is the newest one on the Actions page: https://github.com/pyro30213131-png/QUADRACE/actions. Its result is not yet known. |
+| CI green on Windows and Ubuntu | **Met.** CI run #1 (2026-11-14, https://github.com/pyro30213131-png/QUADRACE/actions) passed every step on both `windows-latest` and `ubuntu-latest`: format check, clippy, Rust tests, extension build, Python tests. That run was on the commit pushed before the commit messages were rewritten; the files in it are identical to the current local files except `CLAUDE.md` and `docs/STATUS.md` (checked with `git diff`). |
 
 ## Owner actions (what only you can do)
 
-1. **Check the first CI run** (Actions tab of the repo, link in the table above). If either job (Windows or Ubuntu) fails, send me the failing step's log and I will fix it. If both are green, tell me and milestone 0 is done.
+1. **Replace GitHub's history (not done yet).** GitHub `main` still holds the six commits that carry the `Co-Authored-By: Claude` line. The rewritten local history has to be force-pushed with `git push --force-with-lease origin main` (it refuses if GitHub's `main` is not the commit your last fetch saw). The safety check blocked me from running it, so you run it. Afterwards a second CI run starts on the new commits; it should be green because only documentation differs.
 2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up: changing the commits already pushed means another history rewrite and force-push.
 
 ## Last test results
@@ -31,6 +31,7 @@ Measured on 2026-11-14 on this machine (Rust 1.100.0, Python 3.12.10, release bu
 | `pytest -q` | 12 passed in 1.28 s |
 | `import quadsim, quadrace` from another folder | works; `add_arrays([1, 2], [10, 20])` returned `[11, 22]` |
 | `maturin build` wheel | contains `quadsim` (with the compiled `.pyd`) and `quadrace` |
+| CI run #1 on GitHub (2026-11-14) | `windows-latest`: all steps passed. `ubuntu-latest`: all steps passed |
 
 Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`), as expected with no extension. No test was weakened, skipped or changed between the two runs.
 
@@ -59,10 +60,11 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 3. `cargo test` runs on Windows (the system Python is on PATH).
 4. `cargo fmt --check` and `cargo clippy -- -D warnings` pass.
 
+5. **CI works on both systems.** The `actions/checkout@v7` and `actions/setup-python@v7` tags exist, the Ubuntu steps (virtual environment, linking against the runner's Python) and the Windows steps passed, and the code builds and passes its tests on Linux as well as Windows (CI run #1).
+
 ## Still unverified
 
-1. **CI has never run.** Parts of it that could still fail: the `actions/checkout@v7` and `actions/setup-python@v7` tags (I checked the latest release numbers, not that the short `v7` tag exists), the Ubuntu steps (`source .venv/bin/activate`, linking against the runner's Python), and the Windows runner's Git Bash steps.
-2. Nothing here has been run on Linux.
+1. CI has run once, on the commit before the history rewrite. A second run on the rewritten commits has not happened because the force-push is pending. Only `CLAUDE.md` and `docs/STATUS.md` differ, so a failure is not expected.
 
 ## Decisions and deviations
 
@@ -73,8 +75,8 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 
 ## Next
 
-Once CI is green on both systems and you say go, milestone 1 is the NumPy reference simulator (`ref_sim.py`: dynamics, rate controller, mixing, motor lag, and the non-parity tests from handoff section 7).
+When you say go, milestone 1 is the NumPy reference simulator (`ref_sim.py`: dynamics, rate controller, mixing, motor lag, and the non-parity tests from handoff section 7). I have not started it.
 
 ## Open questions
 
-- Is the CI run green on both systems? (Waiting on the result.)
+- None for milestone 0. Pending only: the force-push described under "Owner actions".

@@ -1,6 +1,6 @@
 # Milestone 0: setup
 
-> **Local half of the exit test passed; CI half not yet verified.** `import quadsim` works locally and all tests pass (see "Results"). The CI workflow has never run, because the repo has not been pushed to GitHub. This page is final once CI is green on Windows and Ubuntu. See `docs/STATUS.md`.
+> **Milestone 0 is done: both halves of the exit test passed.** `import quadsim` works locally and all tests pass, and CI is green on Windows and Ubuntu (see "Results"). See `docs/STATUS.md`.
 
 ## What was built
 
@@ -47,7 +47,7 @@ Measured on 2026-11-14 on the owner's Windows machine (Rust 1.100.0, Python 3.12
 | `pytest -q` | 12 passed in 1.28 s |
 | `import quadsim, quadrace` from another folder | works; `quadsim.add_arrays([1, 2], [10, 20])` returned `[11, 22]` |
 | `maturin build` wheel | contains `quadsim` (with the compiled `.pyd`) and `quadrace` |
-| CI on Windows and Ubuntu | **not run yet** |
+| CI on Windows and Ubuntu | **passed** (run #1, 2026-11-14): format check, clippy, Rust tests, extension build and Python tests all green on both `windows-latest` and `ubuntu-latest` |
 
 Before the build, the same `pytest` run gave 4 passed and 8 failed (`ModuleNotFoundError`), which is what a missing extension should look like. No test was changed between the two runs.
 
