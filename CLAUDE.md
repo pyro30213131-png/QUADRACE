@@ -14,7 +14,7 @@ section 5 architecture and API, 6 conventions, 7 dynamics and required tests, 8 
 3. Work on that milestone and nothing beyond it.
 4. Before ending a session, update `docs/STATUS.md`.
 5. When a milestone's exit test passes: write `docs/milestone-N.md`, report results, and stop. Do not start the next milestone unprompted.
-6. Commit each milestone's work as it is finished: small commits, one task each, and the milestone's docs in the last one. Commit only; push only when the owner asks.
+6. Commit each milestone's work as it is finished: small commits, one task each, and the milestone's docs in the last one. Commit only; push only when the owner asks. Commit messages carry no `Co-Authored-By` or other attribution lines (owner's instruction).
 
 ## Owner context
 

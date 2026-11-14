@@ -11,12 +11,12 @@ Exit test: `import quadsim` works locally and CI is green.
 | Exit-test part | State |
 | --- | --- |
 | `import quadsim` works locally | **Met.** Measured 2026-11-14, see "Last test results". |
-| CI green on Windows and Ubuntu | **Not verified yet.** `main` (`b2ca66a`) was pushed to https://github.com/pyro30213131-png/QUADRACE on 2026-11-14 and the first CI run started (https://github.com/pyro30213131-png/QUADRACE/actions/runs/43585176620). It was still in progress when last looked at; the result is not yet known. |
+| CI green on Windows and Ubuntu | **Not verified yet.** `main` was pushed to https://github.com/pyro30213131-png/QUADRACE on 2026-11-14. Commit messages were then rewritten (file contents unchanged) and force-pushed, so the run to look at is the newest one on the Actions page: https://github.com/pyro30213131-png/QUADRACE/actions. Its result is not yet known. |
 
 ## Owner actions (what only you can do)
 
 1. **Check the first CI run** (Actions tab of the repo, link in the table above). If either job (Windows or Ubuntu) fails, send me the failing step's log and I will fix it. If both are green, tell me and milestone 0 is done.
-2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up; the six already pushed cannot change without rewriting history.
+2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up: changing the commits already pushed means another history rewrite and force-push.
 
 ## Last test results
 
@@ -44,7 +44,7 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 
 ## What is done
 
-- **Git:** repo initialised on branch `main` with five small commits for the milestone 0 scaffold. Convention from now on (also in `CLAUDE.md`): commit each milestone's work as it is finished, small commits one task each, commit only and push only when asked.
+- **Git:** repo initialised on branch `main` with five small commits for the milestone 0 scaffold. Convention from now on (also in `CLAUDE.md`): commit each milestone's work as it is finished, small commits one task each, commit only and push only when asked. Commit messages carry no `Co-Authored-By` or other attribution lines (owner's instruction).
 - Cargo workspace and the `quadsim` crate with a hello-world `add_arrays` (PyO3 0.30.1 + rust-numpy 0.30.0), including two Rust unit tests.
 - maturin configuration in `pyproject.toml`; Python packages `quadsim` (re-export) and `quadrace` (empty for now).
 - `configs/drone.yaml` with the handoff section 7 values.
