@@ -11,19 +11,12 @@ Exit test: `import quadsim` works locally and CI is green.
 | Exit-test part | State |
 | --- | --- |
 | `import quadsim` works locally | **Met.** Measured 2026-11-14, see "Last test results". |
-| CI green on Windows and Ubuntu | **Not verified.** The workflow has never run: the repo is committed locally but has no GitHub remote and has not been pushed. |
+| CI green on Windows and Ubuntu | **Not verified yet.** `main` (`b2ca66a`) was pushed to https://github.com/pyro30213131-png/QUADRACE on 2026-11-14 and the first CI run started (https://github.com/pyro30213131-png/QUADRACE/actions/runs/43585176620). It was still in progress when last looked at; the result is not yet known. |
 
 ## Owner actions (what only you can do)
 
-1. **Push to GitHub**, so CI can run. Either send me the repo URL and tell me to push, or run these yourself (replace the URL):
-
-   ```powershell
-   git remote add origin https://github.com/<your-user>/quadrace.git
-   git push -u origin main
-   ```
-
-   Commits made by Claude carry your existing git identity (`git config user.name` and `user.email`), so that name and email will be public on a public repo.
-2. **Open the Actions tab** after the first push. If either job (Windows or Ubuntu) fails, send me the failing step's log and I will fix it.
+1. **Check the first CI run** (Actions tab of the repo, link in the table above). If either job (Windows or Ubuntu) fails, send me the failing step's log and I will fix it. If both are green, tell me and milestone 0 is done.
+2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up; the six already pushed cannot change without rewriting history.
 
 ## Last test results
 
@@ -84,4 +77,4 @@ Once CI is green on both systems and you say go, milestone 1 is the NumPy refere
 
 ## Open questions
 
-- What is the GitHub repo URL, and should I push `main` to it? No remote is configured and nothing has been pushed.
+- Is the CI run green on both systems? (Waiting on the result.)
