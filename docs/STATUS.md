@@ -15,7 +15,7 @@ Exit test: `import quadsim` works locally and CI is green.
 
 ## Owner actions (what only you can do)
 
-1. **Replace GitHub's history (not done yet).** GitHub `main` still holds the six commits that carry the `Co-Authored-By: Claude` line. The rewritten local history has to be force-pushed with `git push --force-with-lease origin main` (it refuses if GitHub's `main` is not the commit your last fetch saw). The safety check blocked me from running it, so you run it. Afterwards a second CI run starts on the new commits; it should be green because only documentation differs.
+1. **Nothing is waiting on you for milestone 0.** The rewritten history was force-pushed on 2026-11-14 (by you, after the safety check blocked me). Checked afterwards: GitHub `main` equals local `main`, no commit message on it carries a `Co-Authored-By` line, and GitHub's contributors list shows only your account.
 2. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up: changing the commits already pushed means another history rewrite and force-push.
 
 ## Last test results
@@ -64,7 +64,7 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 
 ## Still unverified
 
-1. CI has run once, on the commit before the history rewrite. A second run on the rewritten commits has not happened because the force-push is pending. Only `CLAUDE.md` and `docs/STATUS.md` differ, so a failure is not expected.
+1. CI run #2, on the rewritten history, was still running when this was written: `ubuntu-latest` had passed and `windows-latest` had not finished. Run #1 passed both on identical code, so a failure is not expected, but check the Actions page.
 
 ## Decisions and deviations
 
@@ -79,4 +79,4 @@ When you say go, milestone 1 is the NumPy reference simulator (`ref_sim.py`: dyn
 
 ## Open questions
 
-- None for milestone 0. Pending only: the force-push described under "Owner actions".
+- None for milestone 0.
