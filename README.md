@@ -1,0 +1,71 @@
+# quadrace
+
+A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
+
+**Status: milestone 0 (setup). The extension builds and all tests pass locally; CI has not run yet.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+
+## Setup (native Windows, PowerShell)
+
+1. Install the Visual Studio Build Tools with the "Desktop development with C++" workload, then install Rust with rustup (MSVC toolchain). Details: [docs/STATUS.md](docs/STATUS.md).
+   - **If your Windows username contains a space**, run the Build Tools installer with `TEMP` and `TMP` set to a folder without spaces (for example `C:\vs-temp`). On the development machine the default install failed with error 1622 in the Visual C++ redistributable step, and the same install succeeded with a space-free temp folder.
+2. Create the Python environment and build:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install maturin pytest numpy pyyaml
+maturin develop --release
+```
+
+3. Check it works:
+
+```powershell
+cargo test -p quadsim
+pytest -q
+```
+
+## Layout
+
+```
+Cargo.toml                 Cargo workspace
+pyproject.toml             maturin build configuration
+crates/quadsim/            the Rust simulator
+python/quadsim/            thin Python package that re-exports the compiled module
+python/quadrace/           learning code (PPO, training, evaluation)
+configs/                   every physical constant and hyperparameter, as YAML
+tests/                     Python tests
+docs/                      status, milestone pages, tuning log
+```
+
+### Why two Python packages
+
+The handoff asks for the Rust module to import as `quadsim` and the Python package as `quadrace`.
+
+- maturin builds the compiled file as `quadsim._quadsim` (the leading underscore marks it as an implementation detail).
+- `python/quadsim/__init__.py` re-exports it, so users write `import quadsim`.
+- `python/quadrace/` is a separate, plain-Python package in the same project, listed under `python-packages` in `pyproject.toml`.
+
+maturin requires the Python directory to exist when `python-source` is set and `module-name` is a single name, so a dotted `module-name` inside a real `quadsim` package is the layout maturin documents.
+
+## Conventions (fixed, from handoff section 6)
+
+- SI units, angles in radians.
+- World frame: z up, gravity `(0, 0, -9.81)`. Body frame: x forward, y left, z up along the thrust axis.
+- Quaternion: scalar first `(w, x, y, z)`, Hamilton product, rotates body to world; renormalized after every physics substep. `q` and `-q` are the same rotation.
+- Angular velocity is always in the body frame.
+- State is 17 values: position (3, world), quaternion (4), velocity (3, world), body rates (3, body), motor thrusts (4).
+- Physics runs at 500 Hz, the policy at 50 Hz. Physics is `f64`; observations are cast to `f32` at the Python boundary.
+
+## Pinned versions
+
+| Tool | Version | How it was fixed |
+| --- | --- | --- |
+| Python | 3.12.10 | installed on this machine; the project requires 3.11 or newer |
+| maturin | 1.16.0 | installed in `.venv`; the build requires `>=1.9.4,<2` |
+| numpy | 2.5.4 | installed in `.venv` |
+| pytest | 9.2.0 | installed in `.venv` |
+| PyYAML | 6.0.3 | installed in `.venv` |
+| Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2 | resolved in `Cargo.lock`; built and tested together on 2026-11-14 |
+| Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.85 is the stated minimum for PyO3 and rust-numpy |
+| C++ build tools | Visual Studio Build Tools 2022 17.14, MSVC 14.44.35207, Windows SDK 10.0.26100.0 | installed with winget |
+| GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; **the workflow has not run yet** |
