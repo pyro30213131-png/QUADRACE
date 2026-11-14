@@ -11,11 +11,18 @@ Exit test: `import quadsim` works locally and CI is green.
 | Exit-test part | State |
 | --- | --- |
 | `import quadsim` works locally | **Met.** Measured 2026-11-14, see "Last test results". |
-| CI green on Windows and Ubuntu | **Not verified.** The workflow has never run: this folder is not a git repository and has no GitHub remote. |
+| CI green on Windows and Ubuntu | **Not verified.** The workflow has never run: the repo is committed locally but has no GitHub remote and has not been pushed. |
 
 ## Owner actions (what only you can do)
 
-1. **Create the GitHub repository and push**, so CI can run. I have not run `git init` or committed anything, because you have not asked me to. Say the word and I will initialise git and make small commits; I will not push.
+1. **Push to GitHub**, so CI can run. Either send me the repo URL and tell me to push, or run these yourself (replace the URL):
+
+   ```powershell
+   git remote add origin https://github.com/<your-user>/quadrace.git
+   git push -u origin main
+   ```
+
+   Commits made by Claude carry your existing git identity (`git config user.name` and `user.email`), so that name and email will be public on a public repo.
 2. **Open the Actions tab** after the first push. If either job (Windows or Ubuntu) fails, send me the failing step's log and I will fix it.
 
 ## Last test results
@@ -44,6 +51,7 @@ Before the build, `pytest -q` gave 4 passed and 8 failed (`ModuleNotFoundError`)
 
 ## What is done
 
+- **Git:** repo initialised on branch `main` with five small commits for the milestone 0 scaffold. Convention from now on (also in `CLAUDE.md`): commit each milestone's work as it is finished, small commits one task each, commit only and push only when asked.
 - Cargo workspace and the `quadsim` crate with a hello-world `add_arrays` (PyO3 0.30.1 + rust-numpy 0.30.0), including two Rust unit tests.
 - maturin configuration in `pyproject.toml`; Python packages `quadsim` (re-export) and `quadrace` (empty for now).
 - `configs/drone.yaml` with the handoff section 7 values.
@@ -76,4 +84,4 @@ Once CI is green on both systems and you say go, milestone 1 is the NumPy refere
 
 ## Open questions
 
-- Should I run `git init` and commit the scaffold? Which branch name (`main`)? CI is set up for pushes to `main` and for pull requests.
+- What is the GitHub repo URL, and should I push `main` to it? No remote is configured and nothing has been pushed.
