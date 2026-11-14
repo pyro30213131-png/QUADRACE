@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            activate: .venv/Scripts/activate
+          - os: ubuntu-latest
+            activate: .venv/bin/activate
+    defaults:
+      run:
+        # Git Bash on Windows, bash on Linux: one script syntax for both.
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Rust (stable, MSVC on Windows)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy --component rustfmt
+          rustup default stable
+          rustc --version
+          cargo --version
+
+      - name: Create Python environment
+        run: |
+          python -m venv .venv
+          source ${{ matrix.activate }}
+          python -m pip install --upgrade pip
+          python -m pip install maturin pytest numpy pyyaml
+
+      - name: Rust format check
+        run: cargo fmt --check
+
+      - name: Rust lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Rust tests
+        run: cargo test -p quadsim
+
+      - name: Build the extension
+        run: |
+          source ${{ matrix.activate }}
+          maturin develop --release
+
+      - name: Python tests
+        run: |
+          source ${{ matrix.activate }}
+          pytest -q
