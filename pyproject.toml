@@ -1,0 +1,29 @@
+[build-system]
+# maturin builds the Rust crate and packages it with the Python code.
+# The lower bound comes from the PyO3 getting-started guide (PyO3 0.30).
+requires = ["maturin>=1.9.4,<2"]
+build-backend = "maturin"
+
+[project]
+name = "quadrace"
+version = "0.1.0"
+description = "Batched quadrotor racing simulator in Rust, with hand-written PPO"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pyyaml"]
+
+[project.optional-dependencies]
+dev = ["maturin>=1.9.4,<2", "pytest"]
+
+[tool.maturin]
+# Cargo.toml is not next to this file, so say where it is.
+manifest-path = "crates/quadsim/Cargo.toml"
+# Python code lives in python/, not at the repo root.
+python-source = "python"
+# The compiled module is installed as quadsim._quadsim inside the Python
+# package python/quadsim/, which re-exports it so users write `import quadsim`.
+module-name = "quadsim._quadsim"
+# The learning code is a second package in the same wheel: python/quadrace/.
+python-packages = ["quadrace"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,44 @@
+# configs/drone.yaml
+#
+# APPROXIMATE starting values for a 5-inch racing quad (handoff section 7).
+# They are NOT from a verified source: fine as defaults, not a citation.
+# The Swift paper's values go in configs/drone_swift.yaml once verified (milestone 6).
+#
+# Units: SI (metres, kilograms, seconds, newtons), angles in radians.
+# Every physical constant lives in a config like this one, never in code.
+
+# World (conventions, handoff section 6). Gravity acts along world -z.
+world:
+  gravity: 9.81            # m/s^2
+
+# Timing (handoff section 7). Physics and the rate loop run at physics_hz;
+# the policy acts at policy_hz, so there are physics_hz / policy_hz = 10 substeps per action.
+timing:
+  physics_hz: 500
+  policy_hz: 50
+
+# Rigid body
+body:
+  mass: 0.75               # kg
+  inertia_diag: [0.0025, 0.0021, 0.0043]   # kg m^2, (Jxx, Jyy, Jzz) in the body frame
+  arm_length: 0.15         # m, centre to motor; each motor sits at d = arm_length / sqrt(2) on x and y
+
+# Motors
+motors:
+  thrust_min: 0.0          # N per motor
+  thrust_max: 8.5          # N per motor
+  time_constant: 0.03      # s, first-order lag (tau_m)
+  yaw_torque_coeff: 0.02   # m, kappa: yaw torque per newton of thrust
+
+# Body-rate limits used by the action mapping (omega_cmd = a[1:4] * max_rates)
+limits:
+  max_rates: [10.0, 10.0, 4.0]   # rad/s (roll, pitch, yaw)
+
+# Rate controller
+controller:
+  rate_gain_kp: [20.0, 20.0, 10.0]   # 1/s (roll, pitch, yaw)
+
+# Linear drag. Off until the robustness milestone (7).
+drag:
+  enabled: false
+  linear: [0.3, 0.3, 0.3]  # N s/m per axis (diagonal of D)
