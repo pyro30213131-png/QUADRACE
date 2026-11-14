@@ -1,0 +1,14 @@
+# Keep line endings identical on Windows and Linux so CI does not trip over
+# CRLF vs LF (for example in `cargo fmt --check`). Text files are checked out
+# with LF everywhere.
+* text=auto eol=lf
+
+# Binary files: never touch these.
+*.png binary
+*.jpg binary
+*.gif binary
+*.mp4 binary
+*.rrd binary
+*.pt binary
+*.pyd binary
+*.so binary
