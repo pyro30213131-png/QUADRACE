@@ -1,0 +1,32 @@
+# configs/ppo.yaml
+#
+# PPO settings and the training budget. The values are the handoff's starting values (section 9).
+# They are starting values: tuning is allowed, and every change goes in docs/tuning-log.md with
+# the reason. The names are those of `PPOConfig` in python/quadrace/ppo.py (explained there).
+#
+# Used by:  python -m quadrace.train --config configs/ppo.yaml --task configs/task_hover.yaml
+
+env:
+  num_envs: 2048               # parallel environments
+
+ppo:
+  total_timesteps: 10000000    # environment steps to train for, summed over all environments
+  rollout_len: 64              # steps per environment per update (batch = 2048 * 64 = 131,072)
+  num_minibatches: 8
+  update_epochs: 5
+  gamma: 0.99                  # discount
+  gae_lambda: 0.95
+  clip_coef: 0.2
+  learning_rate: 3.0e-4        # decays linearly to zero over the run
+  anneal_lr: true
+  ent_coef: 0.001              # entropy bonus
+  vf_coef: 0.5
+  max_grad_norm: 1.0
+  hidden_sizes: [256, 256]     # actor and critic are separate networks of this shape, tanh units
+  init_log_std: -0.5           # starting log standard deviation of the action noise
+  normalize_obs: true          # running mean/variance normalization (statistics saved with checkpoints)
+  normalize_reward: false
+  clip_obs: 10.0
+  seed: 1
+  device: auto                 # "auto" uses the GPU if there is one
+  save_every_updates: 50       # checkpoint cadence; the last update is always saved
