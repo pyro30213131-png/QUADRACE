@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) passes its tests locally; its CI run is pending a push.** Nothing has been trained yet, so there are no learning results. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Nothing has been trained yet, so there are no learning results. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 

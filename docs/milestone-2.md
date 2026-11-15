@@ -1,6 +1,6 @@
 # Milestone 2: Rust simulator
 
-> **Exit test met locally: parity passes, 1-thread and 8-thread results match, and a throughput number is recorded.** CI has not run on these commits yet, because they have not been pushed. The handoff says CI must be green before a milestone is reported done, so treat this milestone as done once the push is made and both CI jobs are green. See `docs/STATUS.md`.
+> **Milestone 2 is done: parity passes, 1-thread and 8-thread results match, a throughput number is recorded, and CI is green.** CI run #4 passed every step on both Windows (216 s) and Ubuntu (96 s), and a fresh clone from GitHub built and passed every check on the owner's machine. See `docs/STATUS.md`.
 
 ## What was built
 

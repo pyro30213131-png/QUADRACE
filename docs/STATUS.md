@@ -4,7 +4,7 @@ Last updated: 2026-11-15.
 
 ## Current milestone
 
-**Milestone 2 (Rust simulator): the exit test is met locally; CI has not run on it.** Milestones 0 and 1 are done (milestone 1: tests passed locally on 2026-11-15, and CI run #3 passed every step on both `windows-latest` and `ubuntu-latest`). Milestone 3 has not been started, per the session protocol; it waits for the owner's go.
+**Milestone 2 (Rust simulator): done.** Milestones 0, 1 and 2 are done: each exit test passed locally, and CI is green on both systems (run #3 for milestone 1, run #4 for milestone 2). Milestone 3 has not been started, per the session protocol; it waits for the owner's go.
 
 Milestone 2 exit test: parity passes, 1-thread and 8-thread results match, a throughput number is recorded.
 
@@ -13,11 +13,11 @@ Milestone 2 exit test: parity passes, 1-thread and 8-thread results match, a thr
 | Parity (Rust agrees with `ref_sim.py` to 1e-9) | **Met.** 100 random states, 1 s: worst difference 1.7e-14 m in position and 2.4e-15 in attitude. Also passes with drag on, after one step at 1e-12, and with actions outside [-1, 1]. |
 | 1-thread and 8-thread results match | **Met.** Bit-for-bit identical for 1, 2, 8 and default threads, in a Rust test and a Python test. |
 | Throughput number recorded | **Met.** About 4.8 million env steps per second at 4,096 drones and 16 threads; 0.85 million on one thread (criterion, release build). Details in `docs/milestone-2.md`. |
-| CI green (handoff rule 9) | **Not verified.** The milestone 2 commits are local; CI runs when they are pushed. |
+| CI green (handoff rule 9) | **Met.** CI run #4 (commit `3efb6d2`, the milestone 2 push) passed every step on `windows-latest` (216 s) and `ubuntu-latest` (96 s). A fresh clone of that commit from GitHub also built and passed every check on this machine (fmt, clippy, 38 Rust tests, 71 Python tests). |
 
 ## Owner actions (what only you can do)
 
-1. **Push the milestone 2 commits when you are ready** (`git push`, a normal push; I only push when asked), then check the Actions page: https://github.com/pyro30213131-png/QUADRACE/actions. If either job fails, send me the failing step's log. When both are green, milestone 2 is done and I wait for your go on milestone 3.
+1. **Nothing is waiting on you for milestone 2.** Say go when you want milestone 3. I will ask your OK before installing PyTorch (a download well over 100 MB) and before any training run over an hour.
 2. **Look at one deviation from the handoff** (the first item under "Decisions and deviations"): the Python class has no `track_cfg` or `seed` yet and its step method is called `step_physics`. Say if you want it otherwise.
 3. **Note on the commit identity.** Commits carry your existing git identity (`git config user.name` and `user.email`). The repo is public (GitHub's API answered without a login), so that name and the commit email are visible to everyone. If you want a different email, tell me before more commits pile up: changing the commits already pushed means another history rewrite and force-push.
 
@@ -34,7 +34,8 @@ Measured on 2026-11-15 on this machine (Rust 1.100.0, Python 3.12.10, NumPy 2.5.
 | `maturin develop --release` | builds and installs (exit code 0) |
 | Mutation check on `ref_sim.py` (milestone 1) | 15 deliberate bugs, all caught (one needed a new test, added) |
 | Mutation check on the Rust code (milestone 2) | 14 deliberate bugs, all caught (one needed a new test, one needed the drag-enabled parity test) |
-| CI runs #1, #2, #3 on GitHub (milestones 0 and 1) | both `windows-latest` and `ubuntu-latest` passed every step, every time |
+| CI runs #1 to #4 on GitHub (milestones 0 to 2) | both `windows-latest` and `ubuntu-latest` passed every step, every time |
+| Fresh clone of `3efb6d2` from GitHub, built and tested here | fmt, clippy, 38 Rust tests, `maturin develop --release`, 71 Python tests: all passed |
 
 The individual numbers (parity differences, throughput table, physics checks) are in `docs/milestone-1.md` and `docs/milestone-2.md`. No test was weakened, skipped or deleted.
 
@@ -56,7 +57,7 @@ The individual numbers (parity differences, throughput table, physics checks) ar
 - Python environment: `.venv` (Python 3.12.10) with maturin 1.16.0, numpy 2.5.4, pytest 9.2.0, PyYAML 6.0.3.
 - Versions checked against current sources: crates.io, the PyO3 getting-started guide, PyPI, GitHub releases. Full table in `README.md`.
 - **Milestone 1:** `python/quadrace/ref_sim.py` (one quadrotor in NumPy float64: rigid body with RK4, rate controller, mixing and allocation, motor lag, action mapping, optional linear drag), `tests/test_ref_sim.py` (31 test cases) and `docs/milestone-1.md`. Pushed; CI green.
-- **Milestone 2:** the Rust simulator in `crates/quadsim/src/` (`math.rs`, `params.rs`, `motors.rs`, `controller.rs`, `dynamics.rs`, `env.rs`, `batch.rs`, and the PyO3 `QuadSim` class in `lib.rs`), `tests/test_parity.py`, `tests/test_determinism.py`, 38 Rust unit tests, `benches/step.rs` (criterion) and `docs/milestone-2.md`. Dependencies added: `rayon` 1.12 and, for benchmarks only, `criterion` 0.8 (both approved in CLAUDE.md). Seven commits, none pushed yet.
+- **Milestone 2:** the Rust simulator in `crates/quadsim/src/` (`math.rs`, `params.rs`, `motors.rs`, `controller.rs`, `dynamics.rs`, `env.rs`, `batch.rs`, and the PyO3 `QuadSim` class in `lib.rs`), `tests/test_parity.py`, `tests/test_determinism.py`, 38 Rust unit tests, `benches/step.rs` (criterion) and `docs/milestone-2.md`. Dependencies added: `rayon` 1.12 and, for benchmarks only, `criterion` 0.8 (both approved in CLAUDE.md). Pushed; CI green.
 
 ## Things that were unverified and now are
 
@@ -69,7 +70,7 @@ The individual numbers (parity differences, throughput table, physics checks) ar
 
 ## Still unverified
 
-1. **CI on the milestone 2 commits.** They are local only. This is the first time the Rust simulator, rayon, criterion and the 50-second Python suite run on Linux and in CI. Failures I can imagine: a slow runner, or `cargo clippy --all-targets` compiling the benchmark on Ubuntu. I do not expect them, but nothing has run there.
+1. **No learning code exists yet,** so nothing about PPO, the hover task, gates or training is verified. The simulator itself is verified three ways: the section 7 physics tests (milestone 1), parity with the NumPy reference, and CI on Windows and Ubuntu.
 2. **Throughput on other machines.** The numbers are from one laptop (Intel i5-13450HX) with about 10 percent run-to-run noise. The "16,384 drones is slower on one thread because of the cache" explanation is a guess.
 3. **Drone parameters are still the handoff's approximate values**, not from a verified source (handoff section 13). Fine for now; the Swift values are needed for milestone 6.
 
@@ -87,7 +88,7 @@ The individual numbers (parity differences, throughput table, physics checks) ar
 
 ## Next
 
-Once CI is green on the milestone 2 commits and you say go, milestone 3 is PPO and the hover task: `ppo.py` hand-written in PyTorch, checks on CartPole and Pendulum, the hover task, checkpointing, per-term reward logging; exit test is the hover evaluation in handoff section 8. It needs PyTorch (a download well over 100 MB: I must ask before installing it), and it brings the first `track_cfg`, `seed` and observation/reward code. I have not started it. Read handoff sections 5, 8 and 9 first.
+When you say go, milestone 3 is PPO and the hover task: `ppo.py` hand-written in PyTorch, checks on CartPole and Pendulum, the hover task, checkpointing, per-term reward logging; exit test is the hover evaluation in handoff section 8. It needs PyTorch (a download well over 100 MB: I must ask before installing it), and it brings the first `track_cfg`, `seed` and observation/reward code. I have not started it. Read handoff sections 5, 8 and 9 first.
 
 ## Parked ideas (not to be worked on)
 
