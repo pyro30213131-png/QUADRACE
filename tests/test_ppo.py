@@ -36,12 +36,17 @@ class ConstantEnv:
     act_dim = 1
     n_actions = None
 
-    def __init__(self, num_envs: int, length: int, ending: str, obs_value: float = 0.0) -> None:
+    def __init__(
+        self, num_envs: int, length: int, ending: str, obs_value: float = 0.0, final_obs_value: float | None = None
+    ) -> None:
         assert ending in ("terminated", "truncated")
         self.num_envs = num_envs
         self.length = length
         self.ending = ending
         self.obs_value = obs_value
+        # What `final_obs` holds for a finished episode. By default the same as `obs`; a test can
+        # make it different to see which of the two PPO really uses.
+        self.final_obs_value = obs_value if final_obs_value is None else final_obs_value
         self.time = np.zeros(num_envs, dtype=np.int64)
 
     def reset(self, seed: int | None = None) -> np.ndarray:
@@ -58,7 +63,8 @@ class ConstantEnv:
         reward = np.ones(self.num_envs)
         terminated = done if self.ending == "terminated" else none
         truncated = done if self.ending == "truncated" else none
-        return obs, reward, terminated, truncated, obs.copy()
+        final_obs = np.full((self.num_envs, 1), self.final_obs_value, dtype=np.float32)
+        return obs, reward, terminated, truncated, final_obs
 
 
 def tiny_config(**overrides) -> ppo.PPOConfig:
@@ -182,6 +188,34 @@ def test_a_real_ending_is_not_bootstrapped_so_the_critic_learns_the_short_return
     assert learned_value(result) == pytest.approx(2.7, abs=0.5)
 
 
+def values_requested_during_training(monkeypatch: pytest.MonkeyPatch, env: ConstantEnv) -> list[torch.Tensor]:
+    """Train for one update and return every batch of observations the critic was asked about."""
+    seen: list[torch.Tensor] = []
+    original = ppo.Agent.value
+
+    def spy(self, obs: torch.Tensor) -> torch.Tensor:
+        seen.append(obs.detach().clone())
+        return original(self, obs)
+
+    monkeypatch.setattr(ppo.Agent, "value", spy)
+    ppo.train(env, tiny_config(total_timesteps=4 * 32))
+    return seen
+
+
+def test_the_value_of_final_obs_is_used_to_bootstrap_a_truncated_episode(monkeypatch: pytest.MonkeyPatch) -> None:
+    # final_obs is 7.0 while ordinary observations are 0.0, so the critic being asked about 7.0
+    # shows that it was asked about the final observation of the cut-off episodes.
+    env = ConstantEnv(4, 5, "truncated", final_obs_value=7.0)
+    seen = values_requested_during_training(monkeypatch, env)
+    assert any(bool(torch.all(batch == 7.0)) for batch in seen)
+
+
+def test_the_critic_is_never_asked_about_final_obs_when_episodes_really_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    env = ConstantEnv(4, 5, "terminated", final_obs_value=7.0)
+    seen = values_requested_during_training(monkeypatch, env)
+    assert not any(bool((batch == 7.0).any()) for batch in seen)
+
+
 # --------------------------------------------------------------------------
 # The PPO loss
 # --------------------------------------------------------------------------
@@ -261,6 +295,37 @@ def test_the_loss_pushes_a_good_actions_log_prob_up() -> None:
     assert new_log_prob.grad.item() < 0  # minimizing the loss raises new_log_prob
 
 
+def test_gradients_larger_than_max_grad_norm_are_rescaled_before_the_step() -> None:
+    agent = ppo.Agent(3, 2, None, (8,), -0.5)
+    optimizer = torch.optim.SGD(agent.parameters(), lr=1e-3)
+    loss = 1e6 * agent.value(torch.ones(4, 3)).sum()  # an enormous gradient
+
+    reported = ppo.apply_update(agent, optimizer, loss, max_grad_norm=0.5)
+
+    assert reported > 100.0  # the size it had before rescaling
+    size_used = torch.sqrt(sum((p.grad**2).sum() for p in agent.parameters() if p.grad is not None))
+    assert float(size_used) == pytest.approx(0.5, rel=1e-4)
+
+
+def test_gradients_smaller_than_max_grad_norm_are_left_alone() -> None:
+    agent = ppo.Agent(3, 2, None, (8,), -0.5)
+    optimizer = torch.optim.SGD(agent.parameters(), lr=1e-3)
+    loss = 1e-3 * agent.value(torch.ones(4, 3)).sum()
+
+    reported = ppo.apply_update(agent, optimizer, loss, max_grad_norm=100.0)
+
+    size_used = torch.sqrt(sum((p.grad**2).sum() for p in agent.parameters() if p.grad is not None))
+    assert float(size_used) == pytest.approx(reported, rel=1e-5)
+
+
+def test_apply_update_changes_the_parameters() -> None:
+    agent = ppo.Agent(3, 2, None, (8,), -0.5)
+    optimizer = torch.optim.SGD(agent.parameters(), lr=0.1)
+    before = [p.detach().clone() for p in agent.critic.parameters()]
+    ppo.apply_update(agent, optimizer, agent.value(torch.ones(4, 3)).sum(), max_grad_norm=1.0)
+    assert any(not torch.equal(b, p) for b, p in zip(before, agent.critic.parameters(), strict=True))
+
+
 # --------------------------------------------------------------------------
 # Running statistics
 # --------------------------------------------------------------------------
@@ -310,6 +375,16 @@ def test_reward_scaler_result_does_not_depend_on_the_size_of_the_rewards() -> No
     np.testing.assert_allclose(a, b, rtol=1e-4)
 
 
+def test_reward_scaler_restarts_the_discounted_return_when_an_episode_ends() -> None:
+    scaler = ppo.RewardScaler(2, gamma=0.5, clip=10.0)
+    scaler(np.array([1.0, 1.0]), np.array([False, False]))
+    np.testing.assert_allclose(scaler.returns, [1.0, 1.0])
+    scaler(np.array([1.0, 1.0]), np.array([True, False]))  # environment 0 ends here
+    np.testing.assert_allclose(scaler.returns, [0.0, 1.5])  # its return restarts; environment 1 carries on
+    scaler(np.array([1.0, 1.0]), np.array([False, False]))
+    np.testing.assert_allclose(scaler.returns, [1.0, 1.75])
+
+
 def test_reward_scaler_clips_to_the_given_limit() -> None:
     scaler = ppo.RewardScaler(2, 0.99, clip=3.0)
     for _ in range(50):
@@ -326,6 +401,14 @@ def test_every_sample_is_in_exactly_one_minibatch_per_epoch() -> None:
     chunks = ppo.minibatch_indices(96, 8, torch.Generator().manual_seed(0))
     assert len(chunks) == 8 and all(len(c) == 12 for c in chunks)
     assert sorted(torch.cat(chunks).tolist()) == list(range(96))
+
+
+def test_minibatches_are_shuffled_and_differ_from_one_call_to_the_next() -> None:
+    generator = torch.Generator().manual_seed(0)
+    first = ppo.minibatch_indices(96, 8, generator)
+    second = ppo.minibatch_indices(96, 8, generator)
+    assert first[0].tolist() != list(range(12))  # not simply the first 12 samples in order
+    assert torch.cat(first).tolist() != torch.cat(second).tolist()
 
 
 def test_config_rejects_a_batch_that_does_not_divide_into_minibatches() -> None:
