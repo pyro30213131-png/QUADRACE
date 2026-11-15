@@ -729,6 +729,85 @@ mod tests {
     }
 
     #[test]
+    fn the_crash_penalty_is_not_paid_when_the_episode_is_only_cut_off_by_the_time_limit() {
+        let (params, task) = (test_params(), test_hover_config());
+        let mut env = hovering_at_target(&params, &task, 1);
+        for _ in 0..750 {
+            env.step_hover(&params, &task, hover_action(&params));
+        }
+        assert!(env.out.truncated);
+        assert_eq!(env.out.reward_terms[4], 0.0);
+    }
+
+    #[test]
+    fn a_step_that_terminates_exactly_at_the_time_limit_is_terminated_and_not_truncated() {
+        let (params, task) = (test_params(), test_hover_config());
+        let mut env = Env::new(
+            State::level_at(Vec3::new(5.5, 0.0, 2.0), params.mass * params.gravity / 4.0),
+            1,
+        );
+        env.set_state(env.state, Some(&task));
+        env.steps = 749; // the next step is the 750th: the time limit and the flight-away coincide
+        env.step_hover(&params, &task, hover_action(&params));
+        assert!(env.out.terminated);
+        assert!(!env.out.truncated);
+        assert_eq!(env.out.cause, CAUSE_OUT_OF_BOUNDS);
+    }
+
+    #[test]
+    fn progress_is_measured_from_the_previous_step_not_from_the_start_of_the_episode() {
+        let (params, task) = (test_params(), test_hover_config());
+        let mut state =
+            State::level_at(Vec3::new(0.0, 0.0, 1.0), params.mass * params.gravity / 4.0);
+        state.vel_w = Vec3::new(0.0, 0.0, 1.0); // coasting up toward the target
+        let mut env = Env::new(state, 1);
+        env.set_state(state, Some(&task));
+        env.step_hover(&params, &task, hover_action(&params));
+        let distance_after_first = (task.target_w - env.state.pos_w).norm();
+        env.step_hover(&params, &task, hover_action(&params));
+        let distance_after_second = (task.target_w - env.state.pos_w).norm();
+        let expected = distance_after_first - distance_after_second;
+        assert!((f64::from(env.out.reward_terms[0]) - expected).abs() < 1e-6);
+    }
+
+    #[test]
+    fn the_observation_rotation_matrix_is_row_major_and_maps_body_to_world() {
+        // Yawed 90 degrees, body x points along world y: R = [[0,-1,0],[1,0,0],[0,0,1]].
+        let half = 0.5_f64.sqrt();
+        let mut state = State::level_at(Vec3::new(0.0, 0.0, 2.0), 1.0);
+        state.quat = Quat::new(half, 0.0, 0.0, half);
+        let obs = hover_observation(&state, Vec3::new(0.0, 0.0, 2.0), &[0.0; 4]);
+        let expected = [0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        for (i, want) in expected.iter().enumerate() {
+            assert!(
+                (f64::from(obs[3 + i]) - want).abs() < 1e-6,
+                "entry {i}: {}",
+                obs[3 + i]
+            );
+        }
+    }
+
+    #[test]
+    fn resets_respect_the_minimum_altitude_even_when_the_start_ball_reaches_below_it() {
+        // A target 1 m up with a 1.5 m ball reaches down to -0.5 m, so the 0.5 m floor must bite.
+        let params = test_params();
+        let mut task = test_hover_config();
+        task.target_w = Vec3::new(0.0, 0.0, 1.0);
+        let mut env = Env::new(State::level_at(Vec3::ZERO, 1.0), 4);
+        let mut lowest: f64 = f64::MAX;
+        for _ in 0..3000 {
+            env.reset_hover(&params, &task);
+            assert!(env.state.pos_w.z >= task.start_min_altitude);
+            assert!((env.state.pos_w - task.target_w).norm() <= task.start_max_offset + 1e-12);
+            lowest = lowest.min(env.state.pos_w.z);
+        }
+        assert!(
+            lowest < 0.6,
+            "starts should reach down close to the 0.5 m floor, lowest was {lowest}"
+        );
+    }
+
+    #[test]
     fn a_non_finite_or_bad_config_value_is_rejected() {
         let params = test_params();
         let mut task = test_hover_config();
