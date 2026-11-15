@@ -21,3 +21,6 @@ crate-type = ["cdylib", "rlib"]
 # numpy 0.30.0 declares `pyo3 = "^0.30.0"`.
 pyo3 = "0.30"
 numpy = "0.30"
+# Spreads the environments over CPU threads. Approved in CLAUDE.md. 1.12.0 is the newest
+# release (checked on crates.io on 2026-11-15) and needs Rust 1.80.
+rayon = "1.12"

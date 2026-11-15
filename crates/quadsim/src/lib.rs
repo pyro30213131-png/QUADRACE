@@ -163,16 +163,28 @@ mod _quadsim {
 
     #[pymethods]
     impl QuadSim {
+        /// `num_threads` is how many CPU threads step the drones; `None` (the default) uses one
+        /// per logical CPU. It never changes the results, only the speed.
         #[new]
-        fn new(num_envs: usize, drone_cfg: &Bound<'_, PyDict>) -> PyResult<QuadSim> {
+        #[pyo3(signature = (num_envs, drone_cfg, num_threads=None))]
+        fn new(
+            num_envs: usize,
+            drone_cfg: &Bound<'_, PyDict>,
+            num_threads: Option<usize>,
+        ) -> PyResult<QuadSim> {
             let params = params_from_dict(drone_cfg)?;
-            let batch = Batch::new(num_envs, params).map_err(PyValueError::new_err)?;
+            let batch = Batch::new(num_envs, params, num_threads).map_err(PyValueError::new_err)?;
             Ok(QuadSim { batch })
         }
 
         #[getter]
         fn num_envs(&self) -> usize {
             self.batch.num_envs()
+        }
+
+        #[getter]
+        fn num_threads(&self) -> usize {
+            self.batch.num_threads()
         }
 
         /// Advance every drone by one 50 Hz policy step (10 physics substeps).
