@@ -1,0 +1,35 @@
+# configs/task_hover.yaml
+#
+# The hover task (handoff section 8, "Hover task (milestone 3 only)"): fly to a target point and
+# stay there. A simpler task on the same simulator, used to prove the physics and PPO work before
+# gates exist. Pass this file (read with yaml.safe_load) as `track_cfg` to `quadsim.QuadSim`.
+#
+# Values are the handoff's starting values. Units: SI (metres, seconds, radians). Reward and
+# reset numbers are starting values and may be tuned; every change goes in docs/tuning-log.md.
+
+task: hover
+
+target: [0.0, 0.0, 2.0]        # m, world frame (x, y, z up)
+
+episode:
+  max_seconds: 15.0            # the episode is cut off (truncated) after this long: 750 policy steps
+
+termination:                   # these end the episode (terminated)
+  min_altitude: 0.1            # m: below this the drone has hit the ground (termination cause 3)
+  max_distance: 5.0            # m from the target: beyond this it has flown away (cause 4)
+
+reset:                         # how an episode starts
+  max_offset: 1.5              # m: start uniformly within this distance of the target ...
+  min_altitude: 0.5            # m: ... and at least this high above the ground
+  max_tilt: 0.5                # rad: start tilted up to this far from level, in a random direction
+  max_speed: 2.0               # m/s: start moving at up to this speed, in a random direction
+  max_body_rate: 2.0           # rad/s: start spinning at up to this rate, about a random axis
+  # Motors start at hover thrust. The start yaw is 0 (the handoff does not say; yaw does not matter
+  # for reaching a point).
+
+reward:                        # per policy step
+  progress: 1.0                # per metre closer to the target than on the previous step
+  distance: 0.05               # penalty per metre of distance to the target
+  body_rate: 0.0002            # penalty per (rad/s)^2 of body rate
+  action_change: 0.002         # penalty per squared change of the action since the last step
+  crash: 5.0                   # penalty, once, when the episode terminates
