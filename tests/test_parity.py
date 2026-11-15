@@ -108,6 +108,18 @@ def test_rust_and_numpy_agree_to_1e_9_after_one_second_on_100_random_states(dron
     assert_parity(rust, ref, 1e-9)
 
 
+def test_rust_quaternion_stays_unit_length_to_1e_12_after_one_second(drone_cfg: dict) -> None:
+    # Parity at 1e-9 cannot see a missing renormalization (the drift per second is smaller than
+    # that), so the length is checked on its own, tightly.
+    rng = np.random.default_rng(17)
+    states = random_states(rng, NUM_STATES, drone_cfg["motors"]["thrust_max"])
+    actions = random_actions(rng, NUM_STATES, STEPS_PER_SECOND)
+
+    norms = np.linalg.norm(run_rust(drone_cfg, states, actions)[:, QUAT], axis=1)
+
+    assert np.abs(norms - 1.0).max() < 1e-12
+
+
 def test_rust_and_numpy_agree_with_drag_enabled(drone_cfg: dict) -> None:
     cfg = copy.deepcopy(drone_cfg)
     cfg["drag"]["enabled"] = True
