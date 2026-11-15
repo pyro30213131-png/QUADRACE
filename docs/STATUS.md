@@ -89,6 +89,10 @@ The individual numbers (parity differences, throughput table, physics checks) ar
 
 Once CI is green on the milestone 2 commits and you say go, milestone 3 is PPO and the hover task: `ppo.py` hand-written in PyTorch, checks on CartPole and Pendulum, the hover task, checkpointing, per-term reward logging; exit test is the hover evaluation in handoff section 8. It needs PyTorch (a download well over 100 MB: I must ask before installing it), and it brings the first `track_cfg`, `seed` and observation/reward code. I have not started it. Read handoff sections 5, 8 and 9 first.
 
+## Parked ideas (not to be worked on)
+
+`docs/future-ideas.md` holds ideas the owner wants to keep for after the project: a collaborative challenge where friends design drones (within limits enforced in Rust) and rewards, train locally, and are compared by lap time, and later racing several drones at once. **They are not part of any milestone. Do not start, prepare for or build anything from that page until milestones 0 to 8 are finished and the owner asks.**
+
 ## Open questions
 
 - Is the `QuadSim` API subset described under "Decisions and deviations" acceptable until milestones 3 and 4?
