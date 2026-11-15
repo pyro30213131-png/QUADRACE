@@ -40,6 +40,58 @@ class VecEnv(Protocol):
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]: ...
 
 
+# Termination-cause codes reported by the simulator in `info["termination_cause"]` (handoff section 8).
+# 0 means the episode did not end. Hover uses only 3, 4 and 6.
+TERMINATION_CAUSE_NAMES = {
+    1: "frame_hit",
+    2: "missed_gate",
+    3: "altitude",
+    4: "out_of_bounds",
+    5: "no_gate_timeout",
+    6: "time_limit",
+}
+
+
+class QuadVecEnv:
+    """The Rust simulator's task (hover so far) as a `VecEnv` for PPO.
+
+    A thin wrapper around `quadsim.QuadSim`: it fixes the interface (float32 actions in, five
+    values out) and keeps the `info` of the latest step in `last_info`, so PPO can log each reward
+    term and the share of episodes ending for each reason. The reward is returned as float64.
+    """
+
+    n_actions = None  # actions are continuous
+
+    def __init__(
+        self,
+        num_envs: int,
+        drone_cfg: dict,
+        track_cfg: dict,
+        seed: int = 0,
+        num_threads: int | None = None,
+    ) -> None:
+        import quadsim  # imported here so vec_env.py loads without the compiled extension
+
+        self.sim = quadsim.QuadSim(num_envs, drone_cfg, track_cfg, seed=seed, num_threads=num_threads)
+        self.num_envs = num_envs
+        self.obs_dim = int(self.sim.obs_dim)
+        self.act_dim = 4
+        self.reward_term_names = tuple(self.sim.reward_term_names)
+        self.last_info: dict[str, np.ndarray] | None = None
+
+    def reset(self, seed: int | None = None) -> np.ndarray:
+        return self.sim.reset(seed=seed)
+
+    def step(
+        self, actions: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        obs, reward, terminated, truncated, final_obs, info = self.sim.step(
+            np.ascontiguousarray(actions, dtype=np.float32)
+        )
+        self.last_info = info
+        return obs, reward.astype(np.float64), terminated, truncated, final_obs
+
+
 class GymVecEnv:
     """`num_envs` copies of one gymnasium environment, stepped one after another.
 

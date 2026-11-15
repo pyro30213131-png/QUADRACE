@@ -41,7 +41,7 @@ import torch
 from torch import nn
 from torch.distributions import Categorical, Normal
 
-from quadrace.vec_env import VecEnv
+from quadrace.vec_env import TERMINATION_CAUSE_NAMES, VecEnv
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -530,6 +530,7 @@ def train(env: VecEnv, config: PPOConfig, run_dir: Path | None = None, verbose: 
 
     agent = Agent(env.obs_dim, env.act_dim, env.n_actions, config.hidden_sizes, config.init_log_std).to(device)
     optimizer = torch.optim.Adam(agent.parameters(), lr=config.learning_rate, eps=config.adam_eps)
+    term_names = tuple(getattr(env, "reward_term_names", ()))
     obs_rms = RunningMeanStd((env.obs_dim,)) if config.normalize_obs else None
     reward_scaler = RewardScaler(num_envs, config.gamma, config.clip_reward) if config.normalize_reward else None
 
@@ -583,6 +584,11 @@ def train(env: VecEnv, config: PPOConfig, run_dir: Path | None = None, verbose: 
             for group in optimizer.param_groups:
                 group["lr"] = config.learning_rate * (1.0 - (update - 1.0) / num_updates)
 
+        # Per-update tallies for logging: the sum of each reward term, and how many episodes
+        # ended for each reason (only for environments that report them, such as the simulator).
+        term_sums = np.zeros(len(term_names))
+        cause_counts = np.zeros(max(TERMINATION_CAUSE_NAMES) + 1)
+
         # ---- 1. collect experience ----
         for t in range(steps):
             obs_tensor = torch.as_tensor(normalized(obs), device=device)
@@ -598,6 +604,12 @@ def train(env: VecEnv, config: PPOConfig, run_dir: Path | None = None, verbose: 
             global_step += num_envs
             if obs_rms is not None:
                 obs_rms.update(obs)
+            info = getattr(env, "last_info", None)
+            if info is not None:
+                if term_names:
+                    term_sums += info["reward_terms"].sum(axis=0)
+                if done.any() and "termination_cause" in info:
+                    np.add.at(cause_counts, info["termination_cause"][done], 1)
 
             # Episode statistics use the raw reward.
             episode_return += reward
@@ -662,6 +674,14 @@ def train(env: VecEnv, config: PPOConfig, run_dir: Path | None = None, verbose: 
         }
         for name, values in stats.items():
             metrics[name] = float(np.mean(values))
+        # Each reward term as its mean per environment step, and the share of finished episodes
+        # that ended for each reason. These show which term supplies the return (a run is
+        # suspect if one term dominates) and why episodes end.
+        for name, total in zip(term_names, term_sums, strict=True):
+            metrics[f"reward_terms/{name}"] = float(total / (num_envs * steps))
+        if cause_counts.sum() > 0:
+            for code, name in TERMINATION_CAUSE_NAMES.items():
+                metrics[f"episode_end_share/{name}"] = float(cause_counts[code] / cause_counts.sum())
         if agent.log_std is not None:
             metrics["action_std"] = float(agent.log_std.exp().mean().item())
         history.append(metrics)
