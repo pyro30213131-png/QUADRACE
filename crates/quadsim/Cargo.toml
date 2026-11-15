@@ -2,8 +2,9 @@
 name = "quadsim"
 version = "0.1.0"
 edition = "2024"
-# Minimum Rust version that the current pyo3 and numpy crates (0.30) support.
-rust-version = "1.85"
+# Minimum Rust version for everything in this crate. pyo3 and numpy 0.30 need 1.85; the
+# benchmark library criterion 0.8 needs 1.86.
+rust-version = "1.86"
 description = "Batched quadrotor simulator, exposed to Python through PyO3"
 publish = false
 
@@ -24,3 +25,12 @@ numpy = "0.30"
 # Spreads the environments over CPU threads. Approved in CLAUDE.md. 1.12.0 is the newest
 # release (checked on crates.io on 2026-11-15) and needs Rust 1.80.
 rayon = "1.12"
+
+[dev-dependencies]
+# The benchmark harness. Approved in CLAUDE.md.
+criterion = "0.8"
+
+[[bench]]
+name = "step"
+# criterion provides its own main(), so the default test harness must be turned off.
+harness = false
