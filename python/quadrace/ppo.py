@@ -369,6 +369,20 @@ def ppo_loss(
     return loss, logged
 
 
+def apply_update(agent: Agent, optimizer: torch.optim.Optimizer, loss: torch.Tensor, max_grad_norm: float) -> float:
+    """One gradient step: compute gradients of `loss`, rescale them if their combined size
+    exceeds `max_grad_norm`, and step the optimizer. Returns the gradient size before rescaling.
+
+    The rescaling stops one unusually large gradient (a rare, extreme batch) from throwing the
+    networks far off course.
+    """
+    optimizer.zero_grad()
+    loss.backward()
+    grad_norm = nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
+    optimizer.step()
+    return float(grad_norm)
+
+
 def explained_variance(predicted: np.ndarray, target: np.ndarray) -> float:
     """1 means the critic predicts the returns perfectly, 0 no better than a constant, below 0 worse."""
     target_var = float(np.var(target))
@@ -631,10 +645,7 @@ def train(env: VecEnv, config: PPOConfig, run_dir: Path | None = None, verbose: 
                     new_log_prob, flat_logprobs[idx], flat_advantages[idx], new_value, flat_returns[idx], entropy, config
                 )
 
-                optimizer.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm_(agent.parameters(), config.max_grad_norm)
-                optimizer.step()
+                apply_update(agent, optimizer, loss, config.max_grad_norm)
 
                 for name, value in logged.items():
                     stats[name].append(value)
