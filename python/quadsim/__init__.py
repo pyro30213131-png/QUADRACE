@@ -5,6 +5,6 @@ crates/quadsim by maturin). This file re-exports it so callers write
 `import quadsim` and never need to know about the underscore module.
 """
 
-from ._quadsim import add_arrays
+from ._quadsim import QuadSim, add_arrays
 
-__all__ = ["add_arrays"]
+__all__ = ["QuadSim", "add_arrays"]

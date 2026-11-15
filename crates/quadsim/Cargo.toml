@@ -10,10 +10,11 @@ publish = false
 [lib]
 # The compiled file is called _quadsim (.pyd on Windows, .so on Linux).
 # "cdylib" means "shared library that Python can import".
+# "rlib" is the normal Rust library form, which the benchmark needs to link against.
 # The leading underscore is deliberate: the public Python name is `quadsim`,
 # a thin package in python/quadsim/ that re-exports this module.
 name = "_quadsim"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # pyo3 and numpy (the rust-numpy crate) must share the same 0.x number.
