@@ -41,6 +41,10 @@ jobs:
           source ${{ matrix.activate }}
           python -m pip install --upgrade pip
           python -m pip install maturin pytest numpy pyyaml
+          # The PPO tests need PyTorch, TensorBoard and gymnasium. CI has no GPU, so it uses
+          # the small CPU-only PyTorch build, pinned to the version used on the owner's machine.
+          python -m pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install tensorboard gymnasium
 
       - name: Rust format check
         run: cargo fmt --check

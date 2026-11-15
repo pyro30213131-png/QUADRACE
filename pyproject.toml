@@ -13,6 +13,11 @@ dependencies = ["numpy", "pyyaml"]
 
 [project.optional-dependencies]
 dev = ["maturin>=1.9.4,<2", "pytest"]
+# For training (milestone 3 on). These are documentation more than a recipe: for the GPU build
+# of PyTorch use the install command in README.md instead of plain `pip install torch`.
+train = ["torch", "tensorboard", "gymnasium"]
+# Only for cross-checking ppo.py against a trusted implementation (CLAUDE.md: approved for that only).
+check = ["stable-baselines3"]
 
 [tool.maturin]
 # Cargo.toml is not next to this file, so say where it is.
