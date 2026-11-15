@@ -27,4 +27,17 @@ Two implementation choices that follow Stable-Baselines3 so the comparison is fa
 - **Value loss weight.** The loss is `policy_loss - ent_coef * entropy + vf_coef * MSE(value, return)` with `vf_coef = 0.5` and a plain mean squared error (no extra 0.5 factor, no value clipping). The handoff does not specify this.
 - **Adam epsilon 1e-5** instead of PyTorch's 1e-8, as in CleanRL and Stable-Baselines3.
 
-No drone reward term, PPO setting or controller gain has been changed so far.
+## 2026-11-15: hover training (milestone 3)
+
+Settings used for the hover runs that pass the exit test (`docs/milestone-3.md`): **all the handoff's starting values, unchanged.**
+
+- PPO (`configs/ppo.yaml`): 2,048 environments, rollout 64, 8 minibatches, 5 epochs, gamma 0.99, GAE lambda 0.95, clip 0.2, learning rate 3e-4 decaying linearly to zero, entropy bonus 0.001, gradient clip 1.0, separate actor and critic of 2 x 256 tanh units, initial log std -0.5, observation normalization on, reward normalization off.
+- Hover task (`configs/task_hover.yaml`): reward weights progress 1.0 per metre, distance 0.05, body rate 0.0002, action change 0.002, crash 5.0; the reset ranges and episode ends of handoff section 8.
+
+| Change | Before | After | Reason and result |
+| --- | --- | --- | --- |
+| Training budget (`total_timesteps`) | 10,027,008 (76 updates) | 49,938,432 (381 updates, run with `--total-timesteps 50003968`) | After 10 million steps the policy survived (98% of episodes reached the time limit) but settled 0.12 to 0.14 m from the target, so 0 of 200 episodes passed the 0.1 m test. The same settings trained 5 times longer reached about a millimetre on all three seeds (199, 200 and 200 of 200 pass). |
+
+Not changed, but considered: a larger distance weight (0.05 per metre is small next to the smoothness penalties, which is why precision came slowly). It was not needed, so the handoff's value stays.
+
+No reward term, PPO setting or controller gain has been changed from the handoff's values.

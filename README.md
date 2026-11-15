@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Milestone 3 (PPO and hover) is in progress: the hand-written PPO is built and, on 3 seeds each, learns CartPole and Pendulum about as well as Stable-Baselines3 (local so far, not yet checked in CI); the hover task is next ([docs/milestone-3.md](docs/milestone-3.md)). Nothing has been trained on the drone yet, so there are no learning results for it. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Milestone 3 (PPO and hover) passes its exit test locally, with its CI run pending a push: the hand-written PPO learns CartPole and Pendulum about as well as Stable-Baselines3 (3 seeds each), and a policy it trains to hover on the Rust simulator passes the hover evaluation on all 3 training seeds (199 to 200 of 200 episodes within 0.1 m of the target for the final 10 s; 95% is required), at about 215,000 to 260,000 environment steps per second on the RTX 4050 ([docs/milestone-3.md](docs/milestone-3.md)). Gate racing, the project's headline task, has not been trained yet. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -75,7 +75,7 @@ maturin requires the Python directory to exist when `python-source` is set and `
 | numpy | 2.5.4 | installed in `.venv` |
 | pytest | 9.2.0 | installed in `.venv` |
 | PyYAML | 6.0.3 | installed in `.venv` |
-| Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2, `rayon` 1.12, `criterion` 0.8 (benchmarks only) | resolved in `Cargo.lock`; built and tested together on 2026-11-15 |
+| Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2, `rayon` 1.12, `rand` 0.10 and `rand_pcg` 0.10, `criterion` 0.8 (benchmarks only) | resolved in `Cargo.lock`; built and tested together on 2026-11-15 |
 | Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.86 is the stated minimum (1.85 for PyO3 and rust-numpy, 1.86 for criterion) |
 | C++ build tools | Visual Studio Build Tools 2022 17.14, MSVC 14.44.35207, Windows SDK 10.0.26100.0 | installed with winget |
 | GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; run on GitHub on 2026-11-14 and passed |
