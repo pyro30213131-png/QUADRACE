@@ -44,7 +44,7 @@ Run the single-test form while iterating. Run the full suites before reporting a
 
 ## Key folders
 
-- `crates/quadsim/src/`: `math.rs` (Vec3, Quat), `dynamics.rs` (rigid body, RK4), `motors.rs`, `controller.rs` (rate loop), `track.rs` (gates, crossing test), `env.rs` (obs, reward, resets), `batch.rs` (rayon), `lib.rs` (PyO3 API).
+- `crates/quadsim/src/`: `math.rs` (Vec3, Quat), `params.rs` (drone constants), `dynamics.rs` (rigid body, RK4), `motors.rs`, `controller.rs` (rate loop), `track.rs` (gates, crossing test), `env.rs` (obs, reward, resets), `batch.rs` (rayon), `lib.rs` (PyO3 API).
 - `python/quadrace/`: `ref_sim.py` (NumPy reference, the oracle for parity), `vec_env.py`, `ppo.py`, `train.py`, `evaluate.py`, `viz.py`, `replay_progress.py`, `baseline.py`.
 - `configs/`: every physical constant and hyperparameter, as YAML.
 - `tests/`: parity and environment tests. `docs/`: status, milestone pages, tuning log.

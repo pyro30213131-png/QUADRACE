@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestone 0 (setup) is done, and milestone 1 (the NumPy reference simulator) passes its tests locally; its CI run is pending a push.** There are no results yet, so there are no numbers here. The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) passes its tests locally; its CI run is pending a push.** Nothing has been trained yet, so there are no learning results. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -29,7 +29,7 @@ pytest -q
 ```
 Cargo.toml                 Cargo workspace
 pyproject.toml             maturin build configuration
-crates/quadsim/            the Rust simulator
+crates/quadsim/            the Rust simulator (physics, batching, PyO3 API, benchmark)
 python/quadsim/            thin Python package that re-exports the compiled module
 python/quadrace/           ref_sim.py (NumPy reference simulator) and, later, the learning code (PPO, training, evaluation)
 configs/                   every physical constant and hyperparameter, as YAML
@@ -65,7 +65,7 @@ maturin requires the Python directory to exist when `python-source` is set and `
 | numpy | 2.5.4 | installed in `.venv` |
 | pytest | 9.2.0 | installed in `.venv` |
 | PyYAML | 6.0.3 | installed in `.venv` |
-| Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2 | resolved in `Cargo.lock`; built and tested together on 2026-11-14 |
-| Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.85 is the stated minimum for PyO3 and rust-numpy |
+| Rust crates | `pyo3` 0.30.1, `numpy` 0.30.0, `ndarray` 0.17.2, `rayon` 1.12, `criterion` 0.8 (benchmarks only) | resolved in `Cargo.lock`; built and tested together on 2026-11-15 |
+| Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.86 is the stated minimum (1.85 for PyO3 and rust-numpy, 1.86 for criterion) |
 | C++ build tools | Visual Studio Build Tools 2022 17.14, MSVC 14.44.35207, Windows SDK 10.0.26100.0 | installed with winget |
 | GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; run on GitHub on 2026-11-14 and passed |
