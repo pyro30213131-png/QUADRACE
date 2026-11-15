@@ -507,6 +507,45 @@ def test_a_run_writes_its_config_commit_and_seed_and_one_metrics_line_per_update
     assert (tmp_path / "tb").is_dir()
 
 
+class ReportingEnv(ConstantEnv):
+    """A ConstantEnv that also reports reward terms and termination causes in `last_info`, the way
+    the simulator does."""
+
+    reward_term_names = ("alpha", "beta")
+
+    def step(self, actions: np.ndarray):
+        result = super().step(actions)
+        _, _, terminated, truncated, _ = result
+        cause = np.zeros(self.num_envs, dtype=np.uint8)
+        cause[terminated] = 3  # a real ending: "altitude"
+        cause[truncated] = 6  # a time limit
+        self.last_info = {
+            "reward_terms": np.tile(np.array([0.5, -0.25], np.float32), (self.num_envs, 1)),
+            "termination_cause": cause,
+        }
+        return result
+
+
+def test_per_term_rewards_and_the_share_of_episodes_per_end_cause_are_logged() -> None:
+    result = ppo.train(ReportingEnv(4, 5, "truncated"), tiny_config(total_timesteps=4 * 32 * 2))
+    last = result.history[-1]
+    assert last["reward_terms/alpha"] == pytest.approx(0.5)  # mean per environment step
+    assert last["reward_terms/beta"] == pytest.approx(-0.25)
+    assert last["episode_end_share/time_limit"] == 1.0
+    assert last["episode_end_share/altitude"] == 0.0
+
+
+def test_the_share_of_episodes_per_end_cause_counts_real_endings_separately() -> None:
+    result = ppo.train(ReportingEnv(4, 5, "terminated"), tiny_config(total_timesteps=4 * 32 * 2))
+    last = result.history[-1]
+    assert last["episode_end_share/altitude"] == 1.0 and last["episode_end_share/time_limit"] == 0.0
+
+
+def test_an_environment_without_reward_terms_logs_none_and_still_trains() -> None:
+    result = ppo.train(ConstantEnv(4, 5, "terminated"), tiny_config(total_timesteps=4 * 32 * 2))
+    assert not any(key.startswith(("reward_terms/", "episode_end_share/")) for key in result.history[-1])
+
+
 def test_observation_statistics_are_updated_during_training_and_saved() -> None:
     # An environment whose observation is always 5.0: the saved mean must end up at 5.0.
     result = ppo.train(
