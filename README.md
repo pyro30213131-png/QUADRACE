@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Nothing has been trained yet, so there are no learning results. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Milestone 3 (PPO and hover) is in progress: the hand-written PPO is built and, on 3 seeds each, learns CartPole and Pendulum about as well as Stable-Baselines3 (local so far, not yet checked in CI); the hover task is next ([docs/milestone-3.md](docs/milestone-3.md)). Nothing has been trained on the drone yet, so there are no learning results for it. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -17,7 +17,17 @@ pip install maturin pytest numpy pyyaml
 maturin develop --release
 ```
 
-3. Check it works:
+3. For training (milestone 3 on), install PyTorch, TensorBoard and gymnasium. Use `nvidia-smi` to see which CUDA version your NVIDIA driver supports. On the development machine (driver supporting CUDA 12.9) this was:
+
+```powershell
+pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126   # about 2.4 GB
+pip install tensorboard gymnasium
+pip install stable-baselines3     # only for cross-checking ppo.py
+```
+
+   The CUDA 13 builds (`cu130`) need a newer driver. Without an NVIDIA GPU use `--index-url https://download.pytorch.org/whl/cpu` instead.
+
+4. Check it works:
 
 ```powershell
 cargo test -p quadsim
@@ -69,3 +79,5 @@ maturin requires the Python directory to exist when `python-source` is set and `
 | Rust | 1.100.0 (stable, released 2026-11-09), edition 2024 | installed with rustup; 1.86 is the stated minimum (1.85 for PyO3 and rust-numpy, 1.86 for criterion) |
 | C++ build tools | Visual Studio Build Tools 2022 17.14, MSVC 14.44.35207, Windows SDK 10.0.26100.0 | installed with winget |
 | GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; run on GitHub on 2026-11-14 and passed |
+| PyTorch | 2.14.1 (`+cu126` on the development machine, `+cpu` in CI) | the newest build whose CUDA runtime the owner's driver supports; installed 2026-11-15 from `download.pytorch.org` |
+| Training and check packages | tensorboard 2.21.0, gymnasium 1.4.0, stable-baselines3 2.9.2 | installed in `.venv` on 2026-11-15 (stable-baselines3 for the PPO cross-check only) |

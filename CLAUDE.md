@@ -37,6 +37,7 @@ cargo fmt --check                                  # Rust format check
 cargo bench -p quadsim                             # simulator benchmark
 python -m quadrace.train --config configs/ppo.yaml # train (ask first if over 1 hour)
 python -m quadrace.evaluate --checkpoint <path>    # 200-episode evaluation
+python -m quadrace.ppo_crosscheck --env CartPole-v1 --seeds 1 2 3   # PPO vs Stable-Baselines3 (also Pendulum-v1)
 tensorboard --logdir runs                          # training metrics
 ```
 
