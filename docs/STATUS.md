@@ -29,7 +29,7 @@ Measured on 2026-11-15 on this machine (Rust 1.100.0, Python 3.12.10, NumPy 2.5.
 
 | Check | Result |
 | --- | --- |
-| `pytest -q` | 156 passed in 110 s (12 setup, 31 reference simulator, 23 parity, 5 determinism, 47 PPO, 24 hover environment, 14 training and evaluation) |
+| `pytest -q` | 177 passed in 82 s (12 setup, 31 reference simulator, 23 parity, 5 determinism, 47 PPO, 24 hover environment, 14 training and evaluation, 21 viewer) |
 | `cargo test -p quadsim` | 71 passed, 0 failed |
 | Hover evaluation, handoff settings, 50 million steps, seeds 1, 2, 3 | 200, 199 and 200 of 200 episodes pass (need 95%); median worst distance in the final 10 s about 0.4 to 1 mm. Independent check (500 episodes, new seed, true positions): 497, 500, 500. |
 | Hover evaluation of a hand-written controller (no learning) | 200 of 200; the same controller aimed 0.3 m off: 0 of 200 |
@@ -90,7 +90,9 @@ The individual numbers (parity differences, throughput table, physics checks, PP
 ## Decisions and deviations
 
 - **Config extras.** `configs/drone.yaml` also holds gravity (9.81) and the 500 Hz / 50 Hz timing, so no physical constant lives in code (handoff rule 8). These values are already fixed by sections 6 and 7; only their location is my choice. `drag.enabled: false` is how I encoded "drag off until the robustness milestone".
-- **Not installed yet:** Rerun, matplotlib, ffmpeg (milestones 4 and 8).
+- **The viewer was pulled forward at the owner's request (2026-11-16).** After the hover exit test passed, the owner asked to watch the policy fly. `python/quadrace/viz.py` records a rollout on its own small simulator and shows it as an interactive 3D Rerun recording and as a matplotlib GIF and PNG (`python -m quadrace.viz --checkpoint <path> --rerun`; `--hardest-of 64` for a stress demo of the most tilted starts). This does **not** replace milestone 4's Rerun work (a live view of the policy during gate-racing training, and a replay) or milestone 8's videos. Details in `docs/milestone-3.md`, "Seeing it fly".
+- **New installs for it (owner approved Rerun on 2026-11-16, "go for rerun"; its wheel is 145.6 MB, over the 100 MB that CLAUDE.md says to ask about):** `rerun-sdk` 0.43.2 (plus pyarrow 29 MB, psutil, attrs) and `matplotlib` 3.11.2 (8.9 MB), both approved in CLAUDE.md; `pyproject.toml` has a `view` extra, and CI installs both. The first download crawled at 0.03 to 0.06 MB/s because a Steam download was using most of the connection (not the Wi-Fi: 96% signal, 1.2 Gbps link); after the owner paused Steam it ran at 3.3 MB/s and installed in 66 s.
+- **Not installed yet:** ffmpeg (milestone 8, for videos). The GIFs need no ffmpeg.
 - **PPO choices** (reasons in `docs/milestone-3.md` and `docs/tuning-log.md`): tanh is inside the networks, not on the output, and the simulator clips actions (the handoff does not decide; tanh squashing is an alternative if actions get stuck at the limits); time-limit cut-offs are bootstrapped from `final_obs` and real endings are not; the value loss is a plain MSE with weight 0.5 and no value clipping, matching Stable-Baselines3; reward normalization exists but is off by default; checkpoints load with `weights_only=True`.
 - **`docs/milestone-0.md`** is final: milestone 0 is done.
 - **Milestone 1 choices that the Rust port copied** (details and reasons in `docs/milestone-1.md`): the rotation matrix is built from a normalized quaternion even inside RK4's intermediate stages; RK4 uses the thrust after this substep's motor lag; actions outside [-1, 1] are clipped (the handoff is silent, so this is my choice and is easy to change); the thrust clamp reads `thrust_min` from the config.

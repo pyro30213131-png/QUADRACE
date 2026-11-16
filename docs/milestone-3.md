@@ -17,7 +17,8 @@ Exit test (handoff sections 8 and 10): over 200 episodes with a deterministic po
 - **In the Rust simulator** (`crates/quadsim/src/env.rs`, `batch.rs`, `lib.rs`): the hover task's 22-value observation, 5-term reward, episode ends (hit the ground, flew away, time limit), random resets with one seeded random generator per drone, automatic restart of finished episodes with `final_obs`, and the full `reset()` / `step()` interface of handoff section 5.
 - `configs/task_hover.yaml`: every number of the task (target, limits, reset ranges, reward weights).
 - `configs/ppo.yaml`, `python/quadrace/train.py`: the training script. `python/quadrace/evaluate.py`: the hover evaluation.
-- **Tests:** 24 for the hover environment through Python, 14 for the training script, the wrapper and the evaluation, 47 for PPO (156 Python tests in total across all milestones), and 71 Rust tests.
+- **A viewer** (`python/quadrace/viz.py`), added at the owner's request after the exit test passed: watch a trained policy fly in an interactive 3D Rerun window, or as a GIF (see "Seeing it fly" below).
+- **Tests:** 24 for the hover environment through Python, 14 for the training script, the wrapper and the evaluation, 47 for PPO, 21 for the viewer (177 Python tests in total across all milestones), and 71 Rust tests.
 
 ## How to run it
 
@@ -30,6 +31,10 @@ python -m quadrace.train --run-name hover1 --total-timesteps 50003968
 python -m quadrace.evaluate --checkpoint runs\hover1\checkpoint_000381.pt
 
 tensorboard --logdir runs                      # watch training: returns, losses, each reward term, why episodes end
+
+# Watch the trained policy fly (a GIF and a PNG in runs\renders\, and the interactive Rerun viewer):
+python -m quadrace.viz --checkpoint runs\hover1\checkpoint_000381.pt --rerun
+python -m quadrace.viz --checkpoint runs\hover1\checkpoint_000381.pt --hardest-of 64 --rerun   # the stress demo: most tilted starts
 pytest -q                                      # all Python tests (about 2 minutes)
 cargo test -p quadsim                          # all Rust tests
 ```
@@ -107,7 +112,7 @@ The observation and reward add almost nothing to the physics cost (0.85 million 
 
 | Check | Result |
 | --- | --- |
-| `pytest -q` | 156 passed in 110 s |
+| `pytest -q` | 177 passed in 82 s |
 | `cargo test -p quadsim` | 71 passed |
 | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` | pass |
 | Earlier CI runs (#1 to #5) | all passed on Windows and Ubuntu; #5 was the PPO commits with PyTorch installed |
@@ -146,6 +151,41 @@ Same settings, same number of environments, same seeds (1, 2, 3), same budget; t
 | Mean steps to reach -250 | 103,083 | 92,160 |
 
 Both implementations learn both problems on every seed at about the same speed. The differences are inside the seed-to-seed spread, which is large with 3 seeds; this is evidence that `ppo.py` is not broken, not proof that it is identical. (The cross-checks started before two behaviour-preserving refactors of `ppo.py`; I checked that a short training run gives bit-for-bit the same weights before and after each.)
+
+## Seeing it fly: the viewer
+
+Added on 2026-11-16 at the owner's request, after the exit test passed. It is a small piece pulled forward from later milestones: the handoff plans Rerun for milestone 4 (a live view of the policy while it trains, and a replay) and videos for milestone 8. Those stay where they are; this lets the hover policy be watched now.
+
+**What you are watching.** Each episode throws the drone into the air at a random point within 1.5 m of the target, tilted by up to about 29° in a random direction, moving up to 2 m/s in a random direction and spinning up to 2 rad/s. The policy sees only its own velocity, orientation, rates, the direction to the target, and its last action, and it has to level out and settle on the target. Two recorded demos, both measured from the recordings:
+
+| Demo | The starts | Within 0.1 m of the target from | Within 1 mm from | Final distance |
+| --- | --- | --- | --- | --- |
+| Default (seed 2026) | Three random starts, not hand-picked. They happened to be gentle: tilts of 3.9°, 4.8° and 5.0°, 0.34 to 0.77 m from the target | 0.6 to 1.1 s | 2.7 to 3.0 s | 0.37 mm |
+| **Stress** (`--hardest-of 64`) | The 3 most tilted of 64 random starts: tilts of 28.2°, 27.9° and 27.8° (the task's maximum is 28.6°), 0.64 to 1.03 m from the target | 0.8 to 1.4 s | 2.4 to 3.3 s | 0.4 mm |
+
+The stress demo is chosen for tilt only: the starts are still drawn from the task's own start distribution, but the three shown are the worst of 64, and the picture's title says so. The limits: it never starts upside down or past 29°, and it always starts facing the same way (yaw 0).
+
+**3D or 2D?** Both views are **3D**, drawn as a clean wireframe rather than a game-style world with textures: a ground grid, each drone as an X-frame with four rotor discs and a black nose showing which way it faces, a red cross for the target with a 0.1 m ring, and the path flown so far.
+
+| View | What it is |
+| --- | --- |
+| **Rerun** (`--rerun`) | An interactive 3D window: drag to rotate, scroll to zoom, press play or drag the timeline to scrub through the flight. Beside it, two plots of the distance to the target (plain, and log10). The recording is a 2 MB `.rrd` file that you can reopen any time with `rerun <file>`. |
+| **GIF** (`runs/renders/hover_demo.gif`) | The same flight as a fixed animation: a 3D scene whose camera drifts slowly, next to a log-scale plot of the distance to the target. It takes about 65 s to draw because matplotlib draws every frame on the CPU. |
+| **PNG** (`runs/renders/hover_demo.png`) | A still, in 2D: top and side views of the paths. |
+
+**Honest details.**
+
+- The drones are drawn **5 times life size**, because a 0.15 m arm is tiny in a 6 m scene (`--scale` changes it).
+- Every drone flies the same task to the same target point, so drawn in one place they would overlap. They are **drawn side by side** (shifted along x). That moves only the picture, not the flights.
+- The flights are recorded on their **own small simulator** (3 drones by default, 8 at most), never on the training environments (CLAUDE.md).
+- The recordings are **not live**; a live view while training is milestone 4. The recording uses the seed-1 hover policy; all three seeds pass the exit test.
+- I confirmed that the recording is valid (Rerun's own `rrd verify` passes), that the viewer window opens, and that the GIF is correct frame by frame. I did not look at the Rerun window myself, so tell me if anything looks off.
+- Tests (21): the drawing geometry (motor positions from the handoff table, yaw and roll, scale, side-by-side offsets), the recorder (frame counts, random starts, crashed drones frozen instead of showing their restart, repeatability, the start tilt, and that `--hardest-of` keeps the most tilted starts of a real random pool), and the files written (GIF frame count, PNG, a valid Rerun recording with one row per frame for every entity).
+
+**The decision, and the downloads.**
+
+- The owner approved Rerun on 2026-11-16 ("go for rerun"). Its wheel is **145.6 MB, over the 100 MB that CLAUDE.md says to ask about**, which is why I asked first. `rerun-sdk` 0.43.2 is installed, along with its dependencies pyarrow (29 MB), psutil and attrs. `matplotlib` 3.11.2 (8.9 MB) is installed too; Pillow was already there. Both are approved in CLAUDE.md. CI installs both so the viewer tests run there.
+- **Why the download was so slow.** The first attempt crawled at 0.03 to 0.06 MB/s and then gave up. The cause was not the Wi-Fi (96% signal, 1.2 Gbps link, 6 ms latency): **a Steam download was using about 4.7 MB/s of the roughly 5 MB/s the connection delivers**, so everything else got scraps. After the owner paused Steam, the same download ran at 3.3 MB/s and installed in 66 seconds. The earlier 2.42 GB PyTorch download was fast for the same reason: Steam was idle then.
 
 ## Things not done or not verified
 

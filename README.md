@@ -2,7 +2,7 @@
 
 A batched quadrotor racing simulator written in Rust (exposed to Python through PyO3), plus a hand-written PPO in PyTorch that learns to fly gate courses. State-based only: no camera, no hardware.
 
-**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Milestone 3 (PPO and hover) passes its exit test locally, with its CI run pending a push: the hand-written PPO learns CartPole and Pendulum about as well as Stable-Baselines3 (3 seeds each), and a policy it trains to hover on the Rust simulator passes the hover evaluation on all 3 training seeds (199 to 200 of 200 episodes within 0.1 m of the target for the final 10 s; 95% is required), at about 215,000 to 260,000 environment steps per second on the RTX 4050 ([docs/milestone-3.md](docs/milestone-3.md)). Gate racing, the project's headline task, has not been trained yet. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
+**Status: milestones 0 (setup) and 1 (the NumPy reference simulator) are done. Milestone 2 (the Rust simulator) is also done, with CI green on Windows and Ubuntu.** Milestone 3 (PPO and hover) passes its exit test locally, with its CI run pending a push: the hand-written PPO learns CartPole and Pendulum about as well as Stable-Baselines3 (3 seeds each), and a policy it trains to hover on the Rust simulator passes the hover evaluation on all 3 training seeds (199 to 200 of 200 episodes within 0.1 m of the target for the final 10 s; 95% is required), at about 215,000 to 260,000 environment steps per second on the RTX 4050 ([docs/milestone-3.md](docs/milestone-3.md)). You can watch a trained hover policy fly, in an interactive 3D Rerun window or as a GIF, with `python -m quadrace.viz --checkpoint <path> --rerun`. Gate racing, the project's headline task, has not been trained yet. Measured so far, on one laptop (Intel i5-13450HX, release build): the Rust simulator agrees with the NumPy reference to about 1e-14 after one second of flight on 100 random states, and it steps about 4.8 million drone-steps per second on 16 threads (4,096 drones; 0.85 million on one thread). Details: [docs/milestone-2.md](docs/milestone-2.md). The full spec is in [AGENT_HANDOFF.md](AGENT_HANDOFF.md); current progress is in [docs/STATUS.md](docs/STATUS.md).
 
 ## Setup (native Windows, PowerShell)
 
@@ -23,6 +23,7 @@ maturin develop --release
 pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126   # about 2.4 GB
 pip install tensorboard gymnasium
 pip install stable-baselines3     # only for cross-checking ppo.py
+pip install matplotlib rerun-sdk==0.43.2   # to watch a policy fly (rerun-sdk is a 146 MB download)
 ```
 
    The CUDA 13 builds (`cu130`) need a newer driver. Without an NVIDIA GPU use `--index-url https://download.pytorch.org/whl/cpu` instead.
@@ -41,7 +42,7 @@ Cargo.toml                 Cargo workspace
 pyproject.toml             maturin build configuration
 crates/quadsim/            the Rust simulator (physics, batching, PyO3 API, benchmark)
 python/quadsim/            thin Python package that re-exports the compiled module
-python/quadrace/           ref_sim.py (NumPy reference simulator) and, later, the learning code (PPO, training, evaluation)
+python/quadrace/           ref_sim.py (NumPy reference simulator), the learning code (ppo.py, train.py, evaluate.py) and viz.py (watch a policy fly)
 configs/                   every physical constant and hyperparameter, as YAML
 tests/                     Python tests
 docs/                      status, milestone pages, tuning log
@@ -81,3 +82,4 @@ maturin requires the Python directory to exist when `python-source` is set and `
 | GitHub Actions | `checkout` v7, `setup-python` v7 | latest releases when written; run on GitHub on 2026-11-14 and passed |
 | PyTorch | 2.14.1 (`+cu126` on the development machine, `+cpu` in CI) | the newest build whose CUDA runtime the owner's driver supports; installed 2026-11-15 from `download.pytorch.org` |
 | Training and check packages | tensorboard 2.21.0, gymnasium 1.4.0, stable-baselines3 2.9.2 | installed in `.venv` on 2026-11-15 (stable-baselines3 for the PPO cross-check only) |
+| Viewer packages | matplotlib 3.11.2, rerun-sdk 0.43.2 | installed in `.venv` on 2026-11-16; for `python -m quadrace.viz` |

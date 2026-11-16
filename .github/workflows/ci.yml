@@ -45,6 +45,8 @@ jobs:
           # the small CPU-only PyTorch build, pinned to the version used on the owner's machine.
           python -m pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
           python -m pip install tensorboard gymnasium
+          # The viewer tests need matplotlib (GIF and PNG) and rerun-sdk (the interactive viewer's recording).
+          python -m pip install matplotlib rerun-sdk==0.43.2
 
       - name: Rust format check
         run: cargo fmt --check

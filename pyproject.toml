@@ -18,6 +18,9 @@ dev = ["maturin>=1.9.4,<2", "pytest"]
 train = ["torch", "tensorboard", "gymnasium"]
 # Only for cross-checking ppo.py against a trusted implementation (CLAUDE.md: approved for that only).
 check = ["stable-baselines3"]
+# For watching a trained policy fly (python -m quadrace.viz): matplotlib draws a GIF and a PNG,
+# rerun-sdk records for the interactive Rerun viewer (a 145 MB download).
+view = ["matplotlib", "rerun-sdk"]
 
 [tool.maturin]
 # Cargo.toml is not next to this file, so say where it is.
